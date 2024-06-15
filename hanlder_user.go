@@ -29,6 +29,6 @@ func (apiCfg *apiConfig) handlerUsers(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt: time.Now().UTC(),
 	}
 
-	apiCfg.DB.CreateUser(apiCfg.Context, user)
+	apiCfg.DB.CreateUser(r.Context(), user)
 	respondWithJSON(w, http.StatusOK, user)
 }

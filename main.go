@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"database/sql"
 	"log"
 	"net/http"
@@ -14,8 +13,7 @@ import (
 )
 
 type apiConfig struct {
-	DB      *database.Queries
-	Context context.Context
+	DB *database.Queries
 }
 
 func main() {
@@ -28,11 +26,8 @@ func main() {
 	db, _ := sql.Open("postgres", dbURL)
 	dbQueries := database.New(db)
 
-	ctx := context.Background()
-
 	apiConfig := apiConfig{
-		DB:      *&dbQueries,
-		Context: ctx,
+		DB: *&dbQueries,
 	}
 
 	mux := http.NewServeMux()
