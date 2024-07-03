@@ -30,6 +30,7 @@ func (cfg *apiConfig) middlewareAuth(handler authedHandler) http.HandlerFunc {
 		apiKey, err := GetAPIKey(r.Header)
 		if err != nil {
 			w.WriteHeader(500)
+			respondWithError(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
