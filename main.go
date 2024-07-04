@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/xml"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/miguelvalente/smooth_aggregator/internal/database"
@@ -49,7 +49,7 @@ func fetchRSS(url string) (*RSS, error) {
 		return nil, fmt.Errorf("HTTP error: %s", resp.Status)
 	}
 
-	bytes, err := ioutil.ReadAll(resp.Body)
+	bytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
