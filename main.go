@@ -1,11 +1,17 @@
 package main
 
 import (
+	"context"
+	"database/sql"
 	"encoding/xml"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
+	"os"
+	"time"
 
+	"github.com/joho/godotenv"
 	"github.com/miguelvalente/smooth_aggregator/internal/database"
 
 	_ "github.com/lib/pq"
@@ -64,56 +70,82 @@ func fetchRSS(url string) (*RSS, error) {
 
 }
 
-func main() {
-	as, _ := fetchRSS("https://wagslane.dev/index.xml")
-	fmt.Println(as)
+func smooth_worker(n int32, apiCfg apiConfig) {
+	ctx := context.TODO()
+	for {
+		feedsToFech, _ := apiCfg.DB.GetNextNFeedsToFetch(ctx, n)
+		for _, feed := range feedsToFech {
+			rss, _ := fetchRSS(feed.Url)
+			fmt.Println()
+			fmt.Printf("=================")
+			for i := 0; i < len(feed.Url); i++ {
+				fmt.Print("=")
+			}
+			fmt.Printf("=================")
+			fmt.Print("\n")
+
+			fmt.Println("================", feed.Url, "================")
+			fmt.Println()
+			for _, post := range rss.Channel.Items {
+				fmt.Println(post.Title)
+			}
+
+		}
+		fmt.Println("\nSleepy time for sitty secons ZZZ")
+		time.Sleep(60 * time.Second)
+		fmt.Println("\nWhat its monin aweady. Wakupy timi")
+		time.Sleep(2 * time.Second)
+	}
 }
 
-// func main() {
-// 	godotenv.Load(".env")
+func main() {
+	godotenv.Load(".env")
 
-// 	const filepathRoot = "."
-// 	port := os.Getenv("PORT")
-// 	dbURL := os.Getenv("DB_URL")
+	const filepathRoot = "."
+	port := os.Getenv("PORT")
+	dbURL := os.Getenv("DB_URL")
 
-// 	db, _ := sql.Open("postgres", dbURL)
-// 	dbQueries := database.New(db)
+	db, _ := sql.Open("postgres", dbURL)
+	dbQueries := database.New(db)
 
-// 	apiConfig := apiConfig{
-// 		DB: *&dbQueries,
-// 	}
+	apiCfg := apiConfig{
+		DB: *&dbQueries,
+	}
 
-// 	mux := http.NewServeMux()
+	mux := http.NewServeMux()
 
-// 	mux.HandleFunc("GET /v1/healthz", handlerHealthz)
-// 	mux.HandleFunc("GET /v1/err", handlerErr)
-// 	mux.HandleFunc("POST /v1/users", apiConfig.handlerUsersCreate)
-// 	mux.HandleFunc("GET /v1/users", apiConfig.middlewareAuth(apiConfig.handlerUsersGet))
-// 	mux.HandleFunc("POST /v1/feeds", apiConfig.middlewareAuth(apiConfig.handlerFeedsCreate))
-// 	mux.HandleFunc("GET /v1/feeds", apiConfig.handlerFeedsGet)
-// 	mux.HandleFunc("POST /v1/feed_follows", apiConfig.middlewareAuth(apiConfig.handlerFeedsFollowsCreate))
-// 	mux.HandleFunc("DELETE /v1/feed_follows/{feedFollowID}", apiConfig.middlewareAuth(apiConfig.handlerFeedsFollowsDelete))
-// 	mux.HandleFunc("GET /v1/feed_follows", apiConfig.middlewareAuth(apiConfig.handlerFeedsFollowsGet))
+	mux.HandleFunc("GET /v1/healthz", handlerHealthz)
+	mux.HandleFunc("GET /v1/err", handlerErr)
+	mux.HandleFunc("POST /v1/users", apiCfg.handlerUsersCreate)
+	mux.HandleFunc("GET /v1/users", apiCfg.middlewareAuth(apiCfg.handlerUsersGet))
+	mux.HandleFunc("POST /v1/feeds", apiCfg.middlewareAuth(apiCfg.handlerFeedsCreate))
+	mux.HandleFunc("GET /v1/feeds", apiCfg.handlerFeedsGet)
+	mux.HandleFunc("POST /v1/feed_follows", apiCfg.middlewareAuth(apiCfg.handlerFeedsFollowsCreate))
+	mux.HandleFunc("DELETE /v1/feed_follows/{feedFollowID}", apiCfg.middlewareAuth(apiCfg.handlerFeedsFollowsDelete))
+	mux.HandleFunc("GET /v1/feed_follows", apiCfg.middlewareAuth(apiCfg.handlerFeedsFollowsGet))
 
-// 	//
+	go smooth_worker(10, apiCfg)
 
-// 	feed_uuid := uuid.MustParse("aea1e783-bf58-48db-bbc4-0bb33ed3daab")
-// 	params := database.MarkFeedFetchedParams{
-// 		ID: feed_uuid,
-// 		LastFetchedAt: sql.NullTime{
-// 			Time:  time.Now().UTC(),
-// 			Valid: true,
-// 		},
-// 	}
-// 	_ = apiConfig.DB.MarkFeedFetched(context.TODO(), params)
-// 	what, _ := apiConfig.DB.GetNextNFeedsToFetch(context.TODO(), 10)
-// 	fmt.Println(what)
-// 	srv := &http.Server{
-// 		Addr:    ":" + port,
-// 		Handler: mux,
-// 	}
+	srv := &http.Server{
+		Addr:    ":" + port,
+		Handler: mux,
+	}
 
-// 	log.Printf("Serving files from %s on port: %s\n", filepathRoot, port)
-// 	log.Fatal(srv.ListenAndServe())
+	log.Printf("Serving files from %s on port: %s\n", filepathRoot, port)
+	log.Fatal(srv.ListenAndServe())
 
-// }
+	//
+
+	// feed_uuid := uuid.MustParse("aea1e783-bf58-48db-bbc4-0bb33ed3daab")
+	// params := database.MarkFeedFetchedParams{
+	// 	ID: feed_uuid,
+	// 	LastFetchedAt: sql.NullTime{
+	// 		Time:  time.Now().UTC(),
+	// 		Valid: true,
+	// 	},
+	// }
+	// _ = apiCfg.DB.MarkFeedFetched(context.TODO(), params)
+	// what, _ := apiCfg.DB.GetNextNFeedsToFetch(context.TODO(), 10)
+	// fmt.Println(what)
+
+}
