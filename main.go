@@ -42,6 +42,7 @@ func main() {
 	mux.HandleFunc("POST /v1/feed_follows", apiCfg.middlewareAuth(apiCfg.handlerFeedsFollowsCreate))
 	mux.HandleFunc("DELETE /v1/feed_follows/{feedFollowID}", apiCfg.middlewareAuth(apiCfg.handlerFeedsFollowsDelete))
 	mux.HandleFunc("GET /v1/feed_follows", apiCfg.middlewareAuth(apiCfg.handlerFeedsFollowsGet))
+	mux.HandleFunc("GET /v1/posts/{limit}", apiCfg.middlewareAuth(apiCfg.handlerPostsGet))
 
 	srv := &http.Server{
 		Addr:    ":" + port,
@@ -54,19 +55,5 @@ func main() {
 
 	log.Printf("Serving files from %s on port: %s\n", filepathRoot, port)
 	log.Fatal(srv.ListenAndServe())
-
-	//
-
-	// feed_uuid := uuid.MustParse("aea1e783-bf58-48db-bbc4-0bb33ed3daab")
-	// params := database.MarkFeedFetchedParams{
-	// 	ID: feed_uuid,
-	// 	LastFetchedAt: sql.NullTime{
-	// 		Time:  time.Now().UTC(),
-	// 		Valid: true,
-	// 	},
-	// }
-	// _ = apiCfg.DB.MarkFeedFetched(context.TODO(), params)
-	// what, _ := apiCfg.DB.GetNextNFeedsToFetch(context.TODO(), 10)
-	// fmt.Println(what)
 
 }
