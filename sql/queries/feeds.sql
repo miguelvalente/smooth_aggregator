@@ -22,5 +22,5 @@ order by
 
 -- name: MarkFeedFetched :exec
 update feeds
-set last_fetched_at = $2, updated_at=$2
+set last_fetched_at = now(), updated_at=now()
 where feeds.id = $1;
